@@ -122,6 +122,16 @@ private:
   bool providesGoodLumisection(const edm::Event &iEvent);
   bool isData;
 
+  edm::EDGetTokenT<edm::TriggerResults> triggerToken;
+  edm::EDGetTokenT<reco::VertexCollection> vertexToken;
+  edm::EDGetTokenT<reco::MuonCollection> muonToken;
+  edm::EDGetTokenT<reco::GsfElectronCollection> electronToken;
+  edm::EDGetTokenT<reco::PFTauCollection> tauToken;
+  edm::EDGetTokenT<reco::PFMETCollection> metToken;
+  edm::EDGetTokenT<reco::CaloJetCollection> calojetToken;
+  edm::EDGetTokenT<reco::JetTagCollection> btagjetToken;
+  edm::EDGetTokenT<reco::GenParticleCollection> gensToken;
+
   TTree *tree;
 
   // Event information
@@ -257,17 +267,23 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("event", &value_event);
 
   // Trigger
+  triggerToken = consumes<edm::TriggerResults>(edm::InputTag("TriggerResults", "", "HLT"));
+
   for(size_t i = 0; i < interestingTriggers.size(); i++) {
     tree->Branch(interestingTriggers[i].c_str(), value_trig + i, (interestingTriggers[i] + "/O").c_str());
   }
 
   // Vertices
+  vertexToken = consumes<reco::VertexCollection>(edm::InputTag("offlinePrimaryVertices"));
+  
   tree->Branch("PV_npvs", &value_ve_n, "PV_npvs/I");
   tree->Branch("PV_x", &value_ve_x, "PV_x/F");
   tree->Branch("PV_y", &value_ve_y, "PV_y/F");
   tree->Branch("PV_z", &value_ve_z, "PV_z/F");
 
   // Muons
+  muonToken = consumes<reco::MuonCollection>(edm::InputTag("muons"));
+  
   tree->Branch("nMuon", &value_mu_n, "nMuon/i");
   tree->Branch("Muon_pt", value_mu_pt, "Muon_pt[nMuon]/F");
   tree->Branch("Muon_eta", value_mu_eta, "Muon_eta[nMuon]/F");
@@ -286,6 +302,8 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Muon_genPartIdx", value_mu_genpartidx, "Muon_genPartIdx[nMuon]/I");
 
   // Electrons
+  electronToken = consumes<reco::GsfElectronCollection>(edm::InputTag("gedGsfElectrons"));
+  
   tree->Branch("nElectron", &value_el_n, "nElectron/i");
   tree->Branch("Electron_pt", value_el_pt, "Electron_pt[nElectron]/F");
   tree->Branch("Electron_eta", value_el_eta, "Electron_eta[nElectron]/F");
@@ -303,6 +321,9 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Electron_genPartIdx", value_el_genpartidx, "Electron_genPartIdx[nElectron]/I");
 
   // Taus
+  tauToken = consumes<reco::PFTauCollection>(edm::InputTag("hpsPFTauProducer"));
+
+  /*
   tree->Branch("nTau", &value_tau_n, "nTau/i");
   tree->Branch("Tau_pt", value_tau_pt, "Tau_pt[nTau]/F");
   tree->Branch("Tau_eta", value_tau_eta, "Tau_eta[nTau]/F");
@@ -325,6 +346,7 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Tau_idAntiMuLoose", value_tau_idantimuloose, "Tau_idAntiMuLoose[nTau]/O");
   tree->Branch("Tau_idAntiMuMedium", value_tau_idantimumedium, "Tau_idAntiMuMedium[nTau]/O");
   tree->Branch("Tau_idAntiMuTight", value_tau_idantimutight, "Tau_idAntiMuTight[nTau]/O");
+  */
 
   /*
   // Photons
@@ -340,6 +362,8 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   */
 
   // MET
+  metToken = consumes<reco::PFMETCollection>(edm::InputTag("pfMet"));
+
   tree->Branch("MET_pt", &value_met_pt, "MET_pt/F");
   tree->Branch("MET_phi", &value_met_phi, "MET_phi/F");
   tree->Branch("MET_sumet", &value_met_sumet, "MET_sumet/F");
@@ -349,6 +373,10 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
 
   // Jets
+  calojetToken = consumes<reco::CaloJetCollection>(edm::InputTag("ak4CaloJets"));
+  btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("combinedSecondaryVertexBJetTags"));
+
+  /*
   tree->Branch("nJet", &value_jet_n, "nJet/i");
   tree->Branch("Jet_pt", value_jet_pt, "Jet_pt[nJet]/F");
   tree->Branch("Jet_eta", value_jet_eta, "Jet_eta[nJet]/F");
@@ -356,9 +384,11 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
   tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
   tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
-
+  */
   // Generator particles
-  if (!isData) {
+  if (!isData) {    
+    gensToken = consumes<reco::GenParticleCollection>(edm::InputTag("genParticles"));
+
     tree->Branch("nGenPart", &value_gen_n, "nGenPart/i");
     tree->Branch("GenPart_pt", value_gen_pt, "GenPart_pt[nGenPart]/F");
     tree->Branch("GenPart_eta", value_gen_eta, "GenPart_eta[nGenPart]/F");
@@ -385,7 +415,8 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
 
   // Trigger results
   Handle<TriggerResults> trigger;
-  iEvent.getByLabel(InputTag("TriggerResults", "", "HLT"), trigger);
+  iEvent.getByToken(triggerToken, trigger);
+
   auto psetRegistry = edm::pset::Registry::instance();
   auto triggerParams = psetRegistry->getMapped(trigger->parameterSetID());
   TriggerNames triggerNames(*triggerParams);
@@ -413,7 +444,8 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
 
   // Vertex
   Handle<VertexCollection> vertices;
-  iEvent.getByLabel(InputTag("offlinePrimaryVertices"), vertices);
+  iEvent.getByToken(vertexToken, vertices);
+
   value_ve_n = vertices->size();
   value_ve_x = vertices->begin()->x();
   value_ve_y = vertices->begin()->y();
@@ -422,7 +454,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
 
   // Muons
   Handle<MuonCollection> muons;
-  iEvent.getByLabel(InputTag("muons"), muons);
+  iEvent.getByToken(muonToken, muons);
 
   value_mu_n = 0;
   const float mu_min_pt = 3;
@@ -468,7 +500,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
 
   // Electrons
   Handle<GsfElectronCollection> electrons;
-  iEvent.getByLabel(InputTag("gsfElectrons"), electrons);
+  iEvent.getByToken(electronToken, electrons);
 
   value_el_n = 0;
   const float el_min_pt = 5;
@@ -486,7 +518,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       if (it->passingPflowPreselection()) {
         auto iso03 = it->pfIsolationVariables();
         value_el_pfreliso03all[value_el_n] =
-            (iso03.chargedHadronIso + iso03.neutralHadronIso + iso03.photonIso)/it->pt();
+            (iso03.sumChargedHadronPt + iso03.sumNeutralHadronEt + iso03.sumPhotonEt)/it->pt();
       } else {
         value_el_pfreliso03all[value_el_n] = -999;
       }
@@ -505,8 +537,11 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // References for Tau collections and IDs:
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuidePFTauID#53X
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/NutShellRecipeFor5312AndNewer
+  /*
+    TPM: sort this
+
   Handle<PFTauCollection> taus;
-  iEvent.getByLabel(InputTag("hpsPFTauProducer"), taus);
+  iEvent.getByToken(tauToken, taus);
 
   Handle<PFTauDiscriminator> tausLooseIso, tausVLooseIso, tausMediumIso, tausTightIso,
                              tausDecayMode, tausLooseEleRej, tausMediumEleRej,
@@ -574,6 +609,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_tau_n++;
     }
   }
+  */
 
   /*
   // Photons
@@ -601,7 +637,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
 
   // MET
   Handle<PFMETCollection> met;
-  iEvent.getByLabel(InputTag("pfMet"), met);
+  iEvent.getByToken(metToken, met);
   value_met_pt = met->begin()->pt();
   value_met_phi = met->begin()->phi();
   value_met_sumet = met->begin()->sumEt();
@@ -616,10 +652,13 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID#Recommendations_for_8_TeV_data_a
   // B-tag recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
+  /*
+    TPM: sort this
+  
   Handle<CaloJetCollection> jets;
-  iEvent.getByLabel(InputTag("ak5CaloJets"), jets);
+  iEvent.getByToken(calojetToken, jets);
   Handle<JetTagCollection> btags;
-  iEvent.getByLabel(InputTag("combinedSecondaryVertexBJetTags"), btags);
+  iEvent.getByToken(btagjetToken, btags);
 
   const float jet_min_pt = 15;
   value_jet_n = 0;
@@ -636,11 +675,12 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_jet_n++;
     }
   }
+  */
 
   // Generator particles
   if (!isData) {
     Handle<GenParticleCollection> gens;
-    iEvent.getByLabel(InputTag("genParticles"), gens);
+    iEvent.getByToken(gensToken, gens);
 
     value_gen_n = 0;
     std::vector<GenParticle> interestingGenParticles;
@@ -653,16 +693,18 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       if (status == 1 && pdgId == 11) { // electron
         interestingGenParticles.emplace_back(*it);
       }
-      /*
-      if (status == 1 && pdgId == 22) { // photon
-        interestingGenParticles.emplace_back(*it);
-      }
-      */
+      
+      //if (status == 1 && pdgId == 22) { // photon
+      //  interestingGenParticles.emplace_back(*it);
+      //}
+      
       if (status == 2 && pdgId == 15) { // tau
         interestingGenParticles.emplace_back(*it);
       }
     }
 
+    /*
+      TPM
     // Match muons with gen particles and jets
     for (auto p = selectedMuons.begin(); p != selectedMuons.end(); p++) {
       // Gen particle matching
@@ -704,6 +746,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       // Jet matching
       value_el_jetidx[p - selectedElectrons.begin()] = findBestMatch(selectedJets, p4);
     }
+    */
 
    /*
    // Match photons with gen particles and jets
@@ -728,6 +771,8 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
     }
     */
 
+    /*
+      TPM: sort this later
     // Match taus with gen particles and jets
     for (auto p = selectedTaus.begin(); p != selectedTaus.end(); p++) {
       // Gen particle matching
@@ -748,6 +793,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       // Jet matching
       value_tau_jetidx[p - selectedTaus.begin()] = findBestMatch(selectedJets, p4);
     }
+    */
 
   } // !isData
 
