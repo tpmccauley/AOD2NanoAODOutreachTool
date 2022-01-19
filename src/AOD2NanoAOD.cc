@@ -273,13 +273,14 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
     tree->Branch(interestingTriggers[i].c_str(), value_trig + i, (interestingTriggers[i] + "/O").c_str());
   }
 
+  
   // Vertices
   vertexToken = consumes<reco::VertexCollection>(edm::InputTag("offlinePrimaryVertices"));
   
-  tree->Branch("PV_npvs", &value_ve_n, "PV_npvs/I");
-  tree->Branch("PV_x", &value_ve_x, "PV_x/F");
-  tree->Branch("PV_y", &value_ve_y, "PV_y/F");
-  tree->Branch("PV_z", &value_ve_z, "PV_z/F");
+  //tree->Branch("PV_npvs", &value_ve_n, "PV_npvs/I");
+  //tree->Branch("PV_x", &value_ve_x, "PV_x/F");
+  //tree->Branch("PV_y", &value_ve_y, "PV_y/F");
+  //tree->Branch("PV_z", &value_ve_z, "PV_z/F");
 
   // Muons
   muonToken = consumes<reco::MuonCollection>(edm::InputTag("muons"));
@@ -364,13 +365,13 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   // MET
   metToken = consumes<reco::PFMETCollection>(edm::InputTag("pfMet"));
 
-  tree->Branch("MET_pt", &value_met_pt, "MET_pt/F");
-  tree->Branch("MET_phi", &value_met_phi, "MET_phi/F");
-  tree->Branch("MET_sumet", &value_met_sumet, "MET_sumet/F");
-  tree->Branch("MET_significance", &value_met_significance, "MET_significance/F");
-  tree->Branch("MET_CovXX", &value_met_covxx, "MET_CovXX/F");
-  tree->Branch("MET_CovXY", &value_met_covxy, "MET_CovXY/F");
-  tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
+  //tree->Branch("MET_pt", &value_met_pt, "MET_pt/F");
+  //tree->Branch("MET_phi", &value_met_phi, "MET_phi/F");
+  //tree->Branch("MET_sumet", &value_met_sumet, "MET_sumet/F");
+  //tree->Branch("MET_significance", &value_met_significance, "MET_significance/F");
+  //tree->Branch("MET_CovXX", &value_met_covxx, "MET_CovXX/F");
+  //tree->Branch("MET_CovXY", &value_met_covxy, "MET_CovXY/F");
+  //tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
 
   // Jets
   calojetToken = consumes<reco::CaloJetCollection>(edm::InputTag("ak4CaloJets"));
@@ -442,6 +443,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
     }
   }
 
+ 
   // Vertex
   Handle<VertexCollection> vertices;
   iEvent.getByToken(vertexToken, vertices);
@@ -451,7 +453,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   value_ve_y = vertices->begin()->y();
   value_ve_z = vertices->begin()->z();
   math::XYZPoint pv(vertices->begin()->position());
-
+  
   // Muons
   Handle<MuonCollection> muons;
   iEvent.getByToken(muonToken, muons);
@@ -635,6 +637,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   }
   */
 
+  /*
   // MET
   Handle<PFMETCollection> met;
   iEvent.getByToken(metToken, met);
@@ -646,7 +649,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   value_met_covxx = cov[0][0];
   value_met_covxy = cov[0][1];
   value_met_covyy = cov[1][1];
-
+  */
   // Jets
   // Jet ID recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID#Recommendations_for_8_TeV_data_a
