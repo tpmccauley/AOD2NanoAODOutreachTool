@@ -14,7 +14,7 @@ process.MessageLogger.cerr.INFO = cms.untracked.PSet(
 process.options = cms.untracked.PSet(wantSummary=cms.untracked.bool(True))
 
 # Set the maximum number of events to be processed (-1 processes all events)
-process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(10000))
+process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(1000))
 
 goodJSON = 'data/Cert_13TeV_16Dec2015ReReco_Collisions15_25ns_JSON_v2.txt'
 myLumis = LumiList.LumiList(filename = goodJSON).getCMSSWString().split(',') 

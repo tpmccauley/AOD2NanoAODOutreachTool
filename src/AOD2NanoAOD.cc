@@ -272,15 +272,14 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   for(size_t i = 0; i < interestingTriggers.size(); i++) {
     tree->Branch(interestingTriggers[i].c_str(), value_trig + i, (interestingTriggers[i] + "/O").c_str());
   }
-
   
   // Vertices
   vertexToken = consumes<reco::VertexCollection>(edm::InputTag("offlinePrimaryVertices"));
   
-  //tree->Branch("PV_npvs", &value_ve_n, "PV_npvs/I");
-  //tree->Branch("PV_x", &value_ve_x, "PV_x/F");
-  //tree->Branch("PV_y", &value_ve_y, "PV_y/F");
-  //tree->Branch("PV_z", &value_ve_z, "PV_z/F");
+  tree->Branch("PV_npvs", &value_ve_n, "PV_npvs/I");
+  tree->Branch("PV_x", &value_ve_x, "PV_x/F");
+  tree->Branch("PV_y", &value_ve_y, "PV_y/F");
+  tree->Branch("PV_z", &value_ve_z, "PV_z/F");
 
   // Muons
   muonToken = consumes<reco::MuonCollection>(edm::InputTag("muons"));
@@ -365,27 +364,26 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   // MET
   metToken = consumes<reco::PFMETCollection>(edm::InputTag("pfMet"));
 
-  //tree->Branch("MET_pt", &value_met_pt, "MET_pt/F");
-  //tree->Branch("MET_phi", &value_met_phi, "MET_phi/F");
-  //tree->Branch("MET_sumet", &value_met_sumet, "MET_sumet/F");
-  //tree->Branch("MET_significance", &value_met_significance, "MET_significance/F");
-  //tree->Branch("MET_CovXX", &value_met_covxx, "MET_CovXX/F");
-  //tree->Branch("MET_CovXY", &value_met_covxy, "MET_CovXY/F");
-  //tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
+  tree->Branch("MET_pt", &value_met_pt, "MET_pt/F");
+  tree->Branch("MET_phi", &value_met_phi, "MET_phi/F");
+  tree->Branch("MET_sumet", &value_met_sumet, "MET_sumet/F");
+  tree->Branch("MET_significance", &value_met_significance, "MET_significance/F");
+  tree->Branch("MET_CovXX", &value_met_covxx, "MET_CovXX/F");
+  tree->Branch("MET_CovXY", &value_met_covxy, "MET_CovXY/F");
+  tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
 
   // Jets
   calojetToken = consumes<reco::CaloJetCollection>(edm::InputTag("ak4CaloJets"));
-  btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("combinedSecondaryVertexBJetTags"));
+  //tpm btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("combinedSecondaryVertexBJetTags"));
 
-  /*
   tree->Branch("nJet", &value_jet_n, "nJet/i");
   tree->Branch("Jet_pt", value_jet_pt, "Jet_pt[nJet]/F");
   tree->Branch("Jet_eta", value_jet_eta, "Jet_eta[nJet]/F");
   tree->Branch("Jet_phi", value_jet_phi, "Jet_phi[nJet]/F");
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
   tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
-  tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
-  */
+  //tpm tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
+ 
   // Generator particles
   if (!isData) {    
     gensToken = consumes<reco::GenParticleCollection>(edm::InputTag("genParticles"));
@@ -637,7 +635,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   }
   */
 
-  /*
+  
   // MET
   Handle<PFMETCollection> met;
   iEvent.getByToken(metToken, met);
@@ -649,19 +647,17 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   value_met_covxx = cov[0][0];
   value_met_covxy = cov[0][1];
   value_met_covyy = cov[1][1];
-  */
+ 
   // Jets
   // Jet ID recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID#Recommendations_for_8_TeV_data_a
   // B-tag recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
-  /*
-    TPM: sort this
   
   Handle<CaloJetCollection> jets;
   iEvent.getByToken(calojetToken, jets);
-  Handle<JetTagCollection> btags;
-  iEvent.getByToken(btagjetToken, btags);
+  //Handle<JetTagCollection> btags;
+  //iEvent.getByToken(btagjetToken, btags);
 
   const float jet_min_pt = 15;
   value_jet_n = 0;
@@ -674,11 +670,10 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_jet_phi[value_jet_n] = it->phi();
       value_jet_mass[value_jet_n] = it->mass();
       value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
-      value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
+      //tpm value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
       value_jet_n++;
     }
   }
-  */
 
   // Generator particles
   if (!isData) {
