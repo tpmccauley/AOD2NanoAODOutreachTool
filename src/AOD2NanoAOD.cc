@@ -51,9 +51,6 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
-
 #include "DataFormats/Math/interface/deltaR.h"
 
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -120,7 +117,6 @@ private:
   virtual void analyze(const edm::Event &, const edm::EventSetup &);
   virtual void endJob();
   bool providesGoodLumisection(const edm::Event &iEvent);
-  bool isData;
 
   edm::EDGetTokenT<edm::TriggerResults> triggerToken;
   edm::EDGetTokenT<reco::VertexCollection> vertexToken;
@@ -134,7 +130,6 @@ private:
   edm::EDGetTokenT<reco::PFMETCollection> metToken;
   edm::EDGetTokenT<reco::CaloJetCollection> calojetToken;
   edm::EDGetTokenT<reco::JetTagCollection> btagjetToken;
-  edm::EDGetTokenT<reco::GenParticleCollection> gensToken;
 
   TTree *tree;
 
@@ -246,19 +241,10 @@ private:
   bool value_jet_puid[max_jet];
   float value_jet_btag[max_jet];
 
-  // Generator particles
-  const static int max_gen = 1000;
-  UInt_t value_gen_n;
-  float value_gen_pt[max_gen];
-  float value_gen_eta[max_gen];
-  float value_gen_phi[max_gen];
-  float value_gen_mass[max_gen];
-  int value_gen_pdgid[max_gen];
-  int value_gen_status[max_gen];
 };
 
 AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
-        : isData(iConfig.getParameter<bool>("isData")) {
+{
   edm::Service<TFileService> fs;
 
   tree = fs->make<TTree>("Events", "Events");
@@ -396,19 +382,7 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
   tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
   //tpm tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
- 
-  // Generator particles
-  if (!isData) {    
-    gensToken = consumes<reco::GenParticleCollection>(edm::InputTag("genParticles"));
 
-    tree->Branch("nGenPart", &value_gen_n, "nGenPart/i");
-    tree->Branch("GenPart_pt", value_gen_pt, "GenPart_pt[nGenPart]/F");
-    tree->Branch("GenPart_eta", value_gen_eta, "GenPart_eta[nGenPart]/F");
-    tree->Branch("GenPart_phi", value_gen_phi, "GenPart_phi[nGenPart]/F");
-    tree->Branch("GenPart_mass", value_gen_mass, "GenPart_mass[nGenPart]/F");
-    tree->Branch("GenPart_pdgId", value_gen_pdgid, "GenPart_pdgId[nGenPart]/I");
-    tree->Branch("GenPart_status", value_gen_status, "GenPart_status[nGenPart]/I");
-  }
 }
 
 AOD2NanoAOD::~AOD2NanoAOD() {}
@@ -667,126 +641,6 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_jet_n++;
     }
   }
-
-  // Generator particles
-  if (!isData) {
-    Handle<GenParticleCollection> gens;
-    iEvent.getByToken(gensToken, gens);
-
-    value_gen_n = 0;
-    std::vector<GenParticle> interestingGenParticles;
-    for (auto it = gens->begin(); it != gens->end(); it++) {
-      const auto status = it->status();
-      const auto pdgId = std::abs(it->pdgId());
-      if (status == 1 && pdgId == 13) { // muon
-        interestingGenParticles.emplace_back(*it);
-      }
-      if (status == 1 && pdgId == 11) { // electron
-        interestingGenParticles.emplace_back(*it);
-      }
-      
-      //if (status == 1 && pdgId == 22) { // photon
-      //  interestingGenParticles.emplace_back(*it);
-      //}
-      
-      if (status == 2 && pdgId == 15) { // tau
-        interestingGenParticles.emplace_back(*it);
-      }
-    }
-
-    /*
-      TPM
-    // Match muons with gen particles and jets
-    for (auto p = selectedMuons.begin(); p != selectedMuons.end(); p++) {
-      // Gen particle matching
-      auto p4 = p->p4();
-      auto idx = findBestVisibleMatch(interestingGenParticles, p4);
-      if (idx != -1) {
-        auto g = interestingGenParticles.begin() + idx;
-        value_gen_pt[value_gen_n] = g->pt();
-        value_gen_eta[value_gen_n] = g->eta();
-        value_gen_phi[value_gen_n] = g->phi();
-        value_gen_mass[value_gen_n] = g->mass();
-        value_gen_pdgid[value_gen_n] = g->pdgId();
-        value_gen_status[value_gen_n] = g->status();
-        value_mu_genpartidx[p - selectedMuons.begin()] = value_gen_n;
-        value_gen_n++;
-      }
-
-      // Jet matching
-      value_mu_jetidx[p - selectedMuons.begin()] = findBestMatch(selectedJets, p4);
-    }
-
-    // Match electrons with gen particles and jets
-    for (auto p = selectedElectrons.begin(); p != selectedElectrons.end(); p++) {
-      // Gen particle matching
-      auto p4 = p->p4();
-      auto idx = findBestVisibleMatch(interestingGenParticles, p4);
-      if (idx != -1) {
-        auto g = interestingGenParticles.begin() + idx;
-        value_gen_pt[value_gen_n] = g->pt();
-        value_gen_eta[value_gen_n] = g->eta();
-        value_gen_phi[value_gen_n] = g->phi();
-        value_gen_mass[value_gen_n] = g->mass();
-        value_gen_pdgid[value_gen_n] = g->pdgId();
-        value_gen_status[value_gen_n] = g->status();
-        value_el_genpartidx[p - selectedElectrons.begin()] = value_gen_n;
-        value_gen_n++;
-      }
-
-      // Jet matching
-      value_el_jetidx[p - selectedElectrons.begin()] = findBestMatch(selectedJets, p4);
-    }
-    */
-
-   /*
-   // Match photons with gen particles and jets
-    for (auto p = selectedPhotons.begin(); p != selectedPhotons.end(); p++) {
-      // Gen particle matching
-      auto p4 = p->p4();
-      auto idx = findBestVisibleMatch(interestingGenParticles, p4);
-      if (idx != -1) {
-        auto g = interestingGenParticles.begin() + idx;
-        value_gen_pt[value_gen_n] = g->pt();
-        value_gen_eta[value_gen_n] = g->eta();
-        value_gen_phi[value_gen_n] = g->phi();
-        value_gen_mass[value_gen_n] = g->mass();
-        value_gen_pdgid[value_gen_n] = g->pdgId();
-        value_gen_status[value_gen_n] = g->status();
-        value_ph_genpartidx[p - selectedPhotons.begin()] = value_gen_n;
-        value_gen_n++;
-      }
-
-      // Jet matching
-      value_ph_jetidx[p - selectedPhotons.begin()] = findBestMatch(selectedJets, p4);
-    }
-    */
-
-    /*
-      TPM: sort this later
-    // Match taus with gen particles and jets
-    for (auto p = selectedTaus.begin(); p != selectedTaus.end(); p++) {
-      // Gen particle matching
-      auto p4 = p->p4();
-      auto idx = findBestVisibleMatch(interestingGenParticles, p4); // TODO: Subtract the invisible parts only once.
-      if (idx != -1) {
-        auto g = interestingGenParticles.begin() + idx;
-        value_gen_pt[value_gen_n] = g->pt();
-        value_gen_eta[value_gen_n] = g->eta();
-        value_gen_phi[value_gen_n] = g->phi();
-        value_gen_mass[value_gen_n] = g->mass();
-        value_gen_pdgid[value_gen_n] = g->pdgId();
-        value_gen_status[value_gen_n] = g->status();
-        value_tau_genpartidx[p - selectedTaus.begin()] = value_gen_n;
-        value_gen_n++;
-      }
-
-      // Jet matching
-      value_tau_jetidx[p - selectedTaus.begin()] = findBestMatch(selectedJets, p4);
-    }
-    */
-
-  } // !isData
 
   // Fill event
   tree->Fill();
