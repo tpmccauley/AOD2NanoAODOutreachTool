@@ -126,7 +126,10 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> vertexToken;
   edm::EDGetTokenT<reco::MuonCollection> muonToken;
   edm::EDGetTokenT<reco::GsfElectronCollection> electronToken;
-  edm::EDGetTokenT<reco::PFTauCollection> tauToken;
+
+  edm::EDGetTokenT<reco::PFTauCollection> tauToken;  
+  edm::EDGetTokenT<reco::PFTauDiscriminator> tauDiscriminatorTokens[12]; 
+
   edm::EDGetTokenT<reco::PhotonCollection> photonToken;
   edm::EDGetTokenT<reco::PFMETCollection> metToken;
   edm::EDGetTokenT<reco::CaloJetCollection> calojetToken;
@@ -322,7 +325,19 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   // Taus
   tauToken = consumes<reco::PFTauCollection>(edm::InputTag("hpsPFTauProducer"));
 
-  /*
+  tauDiscriminatorTokens[0] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByDecayModeFinding"));
+  tauDiscriminatorTokens[1] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByRawCombinedIsolationDBSumPtCorr"));
+  tauDiscriminatorTokens[2] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByVLooseCombinedIsolationDBSumPtCorr"));
+  tauDiscriminatorTokens[3] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByLooseCombinedIsolationDBSumPtCorr"));
+  tauDiscriminatorTokens[4] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByMediumCombinedIsolationDBSumPtCorr"));
+  tauDiscriminatorTokens[5] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByTightCombinedIsolationDBSumPtCorr"));
+  tauDiscriminatorTokens[6] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByLooseElectronRejection"));
+  tauDiscriminatorTokens[7] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByMediumElectronRejection"));
+  tauDiscriminatorTokens[8] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByTightElectronRejection"));
+  tauDiscriminatorTokens[9] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByLooseMuonRejection"));
+  tauDiscriminatorTokens[10] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByMediumMuonRejection"));
+  tauDiscriminatorTokens[11] = consumes<reco::PFTauDiscriminator>(edm::InputTag("hpsPFTauDiscriminationByTightMuonRejection"));
+
   tree->Branch("nTau", &value_tau_n, "nTau/i");
   tree->Branch("Tau_pt", value_tau_pt, "Tau_pt[nTau]/F");
   tree->Branch("Tau_eta", value_tau_eta, "Tau_eta[nTau]/F");
@@ -345,7 +360,6 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Tau_idAntiMuLoose", value_tau_idantimuloose, "Tau_idAntiMuLoose[nTau]/O");
   tree->Branch("Tau_idAntiMuMedium", value_tau_idantimumedium, "Tau_idAntiMuMedium[nTau]/O");
   tree->Branch("Tau_idAntiMuTight", value_tau_idantimutight, "Tau_idAntiMuTight[nTau]/O");
-  */
 
   // Photons
   photonToken = consumes<reco::PhotonCollection>(edm::InputTag("gedPhotons"));
@@ -536,8 +550,6 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // References for Tau collections and IDs:
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuidePFTauID#53X
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/NutShellRecipeFor5312AndNewer
-  /*
-    TPM: sort this
 
   Handle<PFTauCollection> taus;
   iEvent.getByToken(tauToken, taus);
@@ -547,33 +559,18 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
                              tausTightEleRej, tausLooseMuonRej, tausMediumMuonRej,
                              tausTightMuonRej, tausRawIso;
 
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByDecayModeFinding"),
-          tausDecayMode);
-
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByRawCombinedIsolationDBSumPtCorr"),
-          tausRawIso);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByVLooseCombinedIsolationDBSumPtCorr"),
-          tausVLooseIso);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByLooseCombinedIsolationDBSumPtCorr"),
-          tausLooseIso);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByMediumCombinedIsolationDBSumPtCorr"),
-          tausMediumIso);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByTightCombinedIsolationDBSumPtCorr"),
-          tausTightIso);
-
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByLooseElectronRejection"),
-          tausLooseEleRej);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByMediumElectronRejection"),
-          tausMediumEleRej);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByTightElectronRejection"),
-          tausTightEleRej);
-
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByLooseMuonRejection"),
-          tausLooseMuonRej);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByMediumMuonRejection"),
-          tausMediumMuonRej);
-  iEvent.getByLabel(InputTag("hpsPFTauDiscriminationByTightMuonRejection"),
-          tausTightMuonRej);
+  iEvent.getByToken(tauDiscriminatorTokens[0], tausDecayMode);
+  iEvent.getByToken(tauDiscriminatorTokens[1], tausRawIso);
+  iEvent.getByToken(tauDiscriminatorTokens[2], tausVLooseIso);
+  iEvent.getByToken(tauDiscriminatorTokens[3], tausLooseIso);
+  iEvent.getByToken(tauDiscriminatorTokens[4], tausMediumIso);
+  iEvent.getByToken(tauDiscriminatorTokens[5], tausTightIso);
+  iEvent.getByToken(tauDiscriminatorTokens[6], tausLooseEleRej);
+  iEvent.getByToken(tauDiscriminatorTokens[7], tausMediumEleRej);
+  iEvent.getByToken(tauDiscriminatorTokens[8], tausTightEleRej);
+  iEvent.getByToken(tauDiscriminatorTokens[9], tausLooseMuonRej);
+  iEvent.getByToken(tauDiscriminatorTokens[10], tausMediumMuonRej);
+  iEvent.getByToken(tauDiscriminatorTokens[11], tausTightMuonRej);
 
   const float tau_min_pt = 15;
   value_tau_n = 0;
@@ -608,7 +605,6 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_tau_n++;
     }
   }
-  */
 
   // Photons
   Handle<PhotonCollection> photons;
