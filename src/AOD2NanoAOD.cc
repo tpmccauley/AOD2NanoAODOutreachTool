@@ -127,6 +127,7 @@ private:
   edm::EDGetTokenT<reco::MuonCollection> muonToken;
   edm::EDGetTokenT<reco::GsfElectronCollection> electronToken;
   edm::EDGetTokenT<reco::PFTauCollection> tauToken;
+  edm::EDGetTokenT<reco::PhotonCollection> photonToken;
   edm::EDGetTokenT<reco::PFMETCollection> metToken;
   edm::EDGetTokenT<reco::CaloJetCollection> calojetToken;
   edm::EDGetTokenT<reco::JetTagCollection> btagjetToken;
@@ -211,7 +212,6 @@ private:
   bool value_tau_idantimumedium[max_tau];
   bool value_tau_idantimutight[max_tau];
 
-  /*
   // Photons
   const static int max_ph = 1000;
   UInt_t value_ph_n;
@@ -223,7 +223,6 @@ private:
   float value_ph_pfreliso03all[max_ph];
   int value_ph_genpartidx[max_ph];
   int value_ph_jetidx[max_ph];
-  */
 
   // MET
   float value_met_pt;
@@ -348,8 +347,9 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Tau_idAntiMuTight", value_tau_idantimutight, "Tau_idAntiMuTight[nTau]/O");
   */
 
-  /*
   // Photons
+  photonToken = consumes<reco::PhotonCollection>(edm::InputTag("gedPhotons"));
+
   tree->Branch("nPhoton", &value_ph_n, "nPhoton/i");
   tree->Branch("Photon_pt", value_ph_pt, "Photon_pt[nPhoton]/F");
   tree->Branch("Photon_eta", value_ph_eta, "Photon_eta[nPhoton]/F");
@@ -359,7 +359,6 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Photon_pfRelIso03_all", value_ph_pfreliso03all, "Photon_pfRelIso03_all[nPhoton]/F");
   tree->Branch("Photon_jetIdx", value_ph_jetidx, "Photon_jetIdx[nPhoton]/I");
   tree->Branch("Photon_genPartIdx", value_ph_genpartidx, "Photon_genPartIdx[nPhoton]/I");
-  */
 
   // MET
   metToken = consumes<reco::PFMETCollection>(edm::InputTag("pfMet"));
@@ -611,10 +610,9 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   }
   */
 
-  /*
   // Photons
   Handle<PhotonCollection> photons;
-  iEvent.getByLabel(InputTag("photons"), photons);
+  iEvent.getByToken(photonToken, photons);
 
   value_ph_n = 0;
   const float ph_min_pt = 5;
@@ -633,12 +631,11 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_ph_n++;
     }
   }
-  */
 
-  
   // MET
   Handle<PFMETCollection> met;
   iEvent.getByToken(metToken, met);
+
   value_met_pt = met->begin()->pt();
   value_met_phi = met->begin()->phi();
   value_met_sumet = met->begin()->sumEt();
