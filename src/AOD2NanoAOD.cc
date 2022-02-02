@@ -380,7 +380,7 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Jet_eta", value_jet_eta, "Jet_eta[nJet]/F");
   tree->Branch("Jet_phi", value_jet_phi, "Jet_phi[nJet]/F");
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
-  tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
+  //tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
   tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
 
 }
@@ -620,6 +620,9 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID#Recommendations_for_8_TeV_data_a
   // B-tag recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
+  // For Run2015:
+  // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation76X
+  // https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetID#76X_recipes
   
   Handle<PFJetCollection> jets;
   iEvent.getByToken(jetToken, jets);
@@ -636,7 +639,7 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_jet_eta[value_jet_n] = it->eta();
       value_jet_phi[value_jet_n] = it->phi();
       value_jet_mass[value_jet_n] = it->mass();
-      //tpm value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
+      //value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
       value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
       value_jet_n++;
     }
