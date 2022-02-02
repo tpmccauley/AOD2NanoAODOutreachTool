@@ -27,7 +27,6 @@ myLumis = LumiList.LumiList(filename = goodJSON).getCMSSWString().split(',')
 process.GlobalTag.globaltag = '76X_dataRun2_16Dec2015_v0'
 
 data_files = FileUtils.loadListFromFile('data/CMS_Run2015D_MuonEG_AOD_16Dec2015-v1_00000_file_index.txt') 
-mc_files = FileUtils.loadListFromFile('data/')
 
 process.source = cms.Source(
     "PoolSource", fileNames=cms.untracked.vstring(*data_files)

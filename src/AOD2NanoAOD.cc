@@ -41,7 +41,7 @@
 #include "DataFormats/METReco/interface/PFMET.h"
 #include "DataFormats/METReco/interface/PFMETFwd.h"
 
-#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/BTauReco/interface/JetTag.h"
 
 #include "DataFormats/TauReco/interface/PFTau.h"
@@ -128,7 +128,7 @@ private:
 
   edm::EDGetTokenT<reco::PhotonCollection> photonToken;
   edm::EDGetTokenT<reco::PFMETCollection> metToken;
-  edm::EDGetTokenT<reco::CaloJetCollection> calojetToken;
+  edm::EDGetTokenT<reco::PFJetCollection> jetToken;
   edm::EDGetTokenT<reco::JetTagCollection> btagjetToken;
 
   TTree *tree;
@@ -372,8 +372,8 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
 
   // Jets
-  calojetToken = consumes<reco::CaloJetCollection>(edm::InputTag("ak4CaloJets"));
-  //tpm btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("combinedSecondaryVertexBJetTags"));
+  jetToken = consumes<reco::PFJetCollection>(edm::InputTag("ak4PFJetsCHS"));
+  btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("pfCombinedSecondaryVertexBJetTags"));
 
   tree->Branch("nJet", &value_jet_n, "nJet/i");
   tree->Branch("Jet_pt", value_jet_pt, "Jet_pt[nJet]/F");
@@ -381,7 +381,7 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("Jet_phi", value_jet_phi, "Jet_phi[nJet]/F");
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
   tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
-  //tpm tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
+  tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
 
 }
 
@@ -621,14 +621,14 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // B-tag recommendations:
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation53XReReco
   
-  Handle<CaloJetCollection> jets;
-  iEvent.getByToken(calojetToken, jets);
-  //Handle<JetTagCollection> btags;
-  //iEvent.getByToken(btagjetToken, btags);
+  Handle<PFJetCollection> jets;
+  iEvent.getByToken(jetToken, jets);
+  Handle<JetTagCollection> btags;
+  iEvent.getByToken(btagjetToken, btags);
 
   const float jet_min_pt = 15;
   value_jet_n = 0;
-  std::vector<CaloJet> selectedJets;
+  std::vector<PFJet> selectedJets;
   for (auto it = jets->begin(); it != jets->end(); it++) {
     if (it->pt() > jet_min_pt) {
       selectedJets.emplace_back(*it);
@@ -636,8 +636,8 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
       value_jet_eta[value_jet_n] = it->eta();
       value_jet_phi[value_jet_n] = it->phi();
       value_jet_mass[value_jet_n] = it->mass();
-      value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
-      //tpm value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
+      //tpm value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
+      value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
       value_jet_n++;
     }
   }
