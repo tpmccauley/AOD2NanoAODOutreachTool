@@ -44,4 +44,13 @@ process.TFileService = cms.Service(
     "TFileService", fileName=cms.string("MuonEG_Run2015D_nanoAOD.root")
 )
 
-process.p = cms.Path(process.aod2nanoaod)
+# This is for puId information
+process.load("RecoJets.JetProducers.PileupJetID_cfi")
+process.pileupJetId.jets=cms.InputTag("ak4PFJetsCHS")
+process.pileupJetId.inputIsCorrected=False
+process.pileupJetId.applyJec=True
+process.pileupJetId.vertexes=cms.InputTag("offlinePrimaryVertices")
+#print process.pileupJetId.dumpConfig()
+
+process.p = cms.Path(process.pileupJetId*
+                     process.aod2nanoaod)

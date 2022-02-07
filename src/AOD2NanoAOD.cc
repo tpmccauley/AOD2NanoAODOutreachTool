@@ -58,6 +58,9 @@
 #include "FWCore/Common/interface/TriggerResultsByName.h"
 #include "FWCore/ParameterSet/interface/Registry.h"
 
+#include "DataFormats/JetReco/interface/PileupJetIdentifier.h"
+#include "DataFormats/Common/interface/ValueMap.h"
+
 const static std::vector<std::string> interestingTriggers = {
     "HLT_IsoMu24_eta2p1",
     "HLT_IsoMu24",
@@ -128,8 +131,13 @@ private:
 
   edm::EDGetTokenT<reco::PhotonCollection> photonToken;
   edm::EDGetTokenT<reco::PFMETCollection> metToken;
-  edm::EDGetTokenT<reco::PFJetCollection> jetToken;
+  //edm::EDGetTokenT<reco::PFJetCollection> jetToken;
+  edm::EDGetTokenT<edm::View<reco::PFJet> > jetToken;
+  
   edm::EDGetTokenT<reco::JetTagCollection> btagjetToken;
+
+  edm::EDGetTokenT<edm::ValueMap<float> > puJetIdMVAToken;
+  edm::EDGetTokenT<edm::ValueMap<int> > puJetIdFlagToken;
 
   TTree *tree;
 
@@ -238,7 +246,8 @@ private:
   float value_jet_eta[max_jet];
   float value_jet_phi[max_jet];
   float value_jet_mass[max_jet];
-  bool value_jet_puid[max_jet];
+  int value_jet_puid[max_jet];
+  float value_jet_puid_disc[max_jet];
   float value_jet_btag[max_jet];
 
 };
@@ -372,15 +381,21 @@ AOD2NanoAOD::AOD2NanoAOD(const edm::ParameterSet &iConfig)
   tree->Branch("MET_CovYY", &value_met_covyy, "MET_CovYY/F");
 
   // Jets
-  jetToken = consumes<reco::PFJetCollection>(edm::InputTag("ak4PFJetsCHS"));
+  //jetToken = consumes<reco::PFJetCollection>(edm::InputTag("ak4PFJetsCHS"));
+  jetToken = consumes<edm::View<reco::PFJet> >(edm::InputTag("ak4PFJetsCHS"));
+
   btagjetToken = consumes<reco::JetTagCollection>(edm::InputTag("pfCombinedSecondaryVertexBJetTags"));
+
+  puJetIdMVAToken = consumes<edm::ValueMap<float> >(edm::InputTag("pileupJetId","fullDiscriminant"));
+  puJetIdFlagToken = consumes<edm::ValueMap<int> >(edm::InputTag("pileupJetId","fullId"));
 
   tree->Branch("nJet", &value_jet_n, "nJet/i");
   tree->Branch("Jet_pt", value_jet_pt, "Jet_pt[nJet]/F");
   tree->Branch("Jet_eta", value_jet_eta, "Jet_eta[nJet]/F");
   tree->Branch("Jet_phi", value_jet_phi, "Jet_phi[nJet]/F");
   tree->Branch("Jet_mass", value_jet_mass, "Jet_mass[nJet]/F");
-  //tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/O");
+  tree->Branch("Jet_puId", value_jet_puid, "Jet_puId[nJet]/i");
+  tree->Branch("Jet_puIdDisc", value_jet_puid_disc, "Jet_puIdDisc[nJet]/F");
   tree->Branch("Jet_btag", value_jet_btag, "Jet_btag[nJet]/F");
 
 }
@@ -624,26 +639,46 @@ void AOD2NanoAOD::analyze(const edm::Event &iEvent,
   // https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation76X
   // https://twiki.cern.ch/twiki/bin/view/CMS/PileupJetID#76X_recipes
   
-  Handle<PFJetCollection> jets;
+  //Handle<PFJetCollection> jets;
+  Handle<edm::View<reco::PFJet> > jets;
   iEvent.getByToken(jetToken, jets);
   Handle<JetTagCollection> btags;
   iEvent.getByToken(btagjetToken, btags);
 
+  Handle<ValueMap<float> > puJetIdMVA;
+  iEvent.getByToken(puJetIdMVAToken, puJetIdMVA);
+
+  Handle<ValueMap<int> > puJetIdFlag;
+  iEvent.getByToken(puJetIdFlagToken, puJetIdFlag);
+
   const float jet_min_pt = 15;
   value_jet_n = 0;
-  std::vector<PFJet> selectedJets;
-  for (auto it = jets->begin(); it != jets->end(); it++) {
-    if (it->pt() > jet_min_pt) {
-      selectedJets.emplace_back(*it);
-      value_jet_pt[value_jet_n] = it->pt();
-      value_jet_eta[value_jet_n] = it->eta();
-      value_jet_phi[value_jet_n] = it->phi();
-      value_jet_mass[value_jet_n] = it->mass();
-      //value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1;
-      value_jet_btag[value_jet_n] = btags->operator[](it - jets->begin()).second;
+ 
+  for ( size_t i=0; i<jets->size(); ++i ) {
+
+    auto jet = jets->refAt(i);
+
+    if ( jet->pt() > jet_min_pt ) {
+            
+      value_jet_pt[value_jet_n] = jet->pt();
+      value_jet_eta[value_jet_n] = jet->eta();
+      value_jet_phi[value_jet_n] = jet->phi();
+      value_jet_mass[value_jet_n] = jet->mass();
+      
+      //tpm I think this was just the loose ID
+      //value_jet_puid[value_jet_n] = it->emEnergyFraction() > 0.01 && it->n90() > 1; 
+
+      value_jet_puid[value_jet_n] = (*puJetIdFlag)[jet]; 
+      value_jet_puid_disc[value_jet_n] = (*puJetIdMVA)[jet]; 
+
+      value_jet_btag[value_jet_n] = btags->operator[](i).second;
+
       value_jet_n++;
+
     }
+
   }
+   
 
   // Fill event
   tree->Fill();
